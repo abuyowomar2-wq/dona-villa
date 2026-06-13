@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id            String  @id @default(uuid())
+  siteNameAr    String  @default("دونا فيلا")
+  siteNameEn    String  @default("Dona Villa Salon & Spa")
+  logo          String?
+  phone         String?
+  whatsapp      String?
+  instagram     String?
+  snapchat      String?
+  tiktok        String?
+  addressAr     String?
+  addressEn     String?
+  workingHours  String?
+  mapEmbed      String?
+  metaTitleAr   String?
+  metaTitleEn   String?
+  metaDescAr    String?
+  metaDescEn    String?
+  metaKeywords  String?
+  googleMapsUrl String?
+}
+
+model ServiceCategory {
+  id          String    @id @default(uuid())
+  nameAr      String
+  nameEn      String
+  description String?
+  image       String?
+  icon        String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  slug        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  services    Service[]
+}
+
+model Service {
+  id            String          @id @default(uuid())
+  nameAr        String
+  nameEn        String
+  price         Float?
+  priceStartsAt Boolean         @default(false)
+  description   String?
+  image         String?
+  sortOrder     Int             @default(0)
+  isActive      Boolean         @default(true)
+  categoryId    String
+  category      ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Offer {
+  id          String   @id @default(uuid())
+  titleAr     String
+  titleEn     String
+  descriptionAr String?
+  descriptionEn String?
+  priceBefore Float?
+  priceAfter  Float
+  startDate   DateTime?
+  endDate     DateTime?
+  image       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(uuid())
+  title     String?
+  category  String   @default("صالون")
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  service   String?
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HomeContent {
+  id            String   @id @default(uuid())
+  heroTitleAr   String   @default("جمالك يبدأ من دونا فيلا")
+  heroTitleEn   String   @default("Your Beauty Begins at Dona Villa")
+  heroSubtitleAr String  @default("تجربة عناية متكاملة تجمع بين الفخامة، الراحة، والاحترافية.")
+  heroSubtitleEn String  @default("A complete care experience combining luxury, comfort, and professionalism.")
+  heroImage     String?
+  aboutTextAr   String?
+  aboutTextEn   String?
+  ctaTextAr     String   @default("احجزي موعدك الآن واستمتعي بتجربة فريدة من نوعها")
+  ctaTextEn     String   @default("Book your appointment now and enjoy a unique experience")
+  features      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

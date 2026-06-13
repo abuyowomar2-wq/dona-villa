@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: dona-villa
+    env: node
+    region: frankfurt
+    plan: starter
+    buildCommand: node scripts/render-setup.js && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dona-villa-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: DIRECT_URL
+        fromDatabase:
+          name: dona-villa-db
+          property: connectionString
+
+databases:
+  - name: dona-villa-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: 16
