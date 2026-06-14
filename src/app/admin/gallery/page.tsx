@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface GalleryImage {
@@ -21,6 +21,9 @@ export default function AdminGalleryPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"url" | "file">("file");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ title: "", category: "صالون", imageUrl: "", sortOrder: "0" });
 
   const fetchData = async () => {
@@ -33,16 +36,46 @@ export default function AdminGalleryPage() {
   const openAdd = () => {
     setEditing(null);
     setForm({ title: "", category: "صالون", imageUrl: "", sortOrder: "0" });
+    setUploadMode("file");
     setShowModal(true);
   };
 
   const openEdit = (img: GalleryImage) => {
     setEditing(img);
     setForm({ title: img.title || "", category: img.category, imageUrl: img.imageUrl, sortOrder: img.sortOrder.toString() });
+    setUploadMode("url");
     setShowModal(true);
   };
 
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    setUploading(false);
+    if (data.url) {
+      setForm({ ...form, imageUrl: data.url });
+    } else {
+      alert("فشل رفع الصورة");
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
   const handleSave = async () => {
+    if (!form.imageUrl) return alert("الرجاء إدخال رابط الصورة أو رفع ملف");
     setSaving(true);
     const data = { ...form, sortOrder: parseInt(form.sortOrder) || 0 };
     if (editing) {
@@ -79,9 +112,15 @@ export default function AdminGalleryPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map((img) => (
           <div key={img.id} className="bg-white rounded-2xl shadow-sm overflow-hidden group">
-            <div className="aspect-square bg-gradient-to-br from-[var(--color-pink-light)] to-[var(--color-cream-dark)] flex items-center justify-center">
-              <span className="text-5xl">✨</span>
-            </div>
+            {img.imageUrl ? (
+              <div className="aspect-square">
+                <img src={img.imageUrl} alt={img.title || ""} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="aspect-square bg-gradient-to-br from-[var(--color-pink-light)] to-[var(--color-cream-dark)] flex items-center justify-center">
+                <span className="text-5xl">✨</span>
+              </div>
+            )}
             <div className="p-3">
               <p className="text-sm font-medium truncate">{img.title || "بدون عنوان"}</p>
               <p className="text-xs text-gray-400">{img.category} | الترتيب: {img.sortOrder}</p>
@@ -100,10 +139,74 @@ export default function AdminGalleryPage() {
           <div className="bg-white rounded-2xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-6">{editing ? "تعديل الصورة" : "إضافة صورة"}</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">رابط الصورة</label>
-                <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} className="w-full px-4 py-2 border rounded-xl text-left" placeholder="https://..." />
+              {/* Upload Mode Tabs */}
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setUploadMode("file")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${uploadMode === "file" ? "bg-white shadow text-[var(--color-dark)]" : "text-gray-500"}`}
+                >
+                  📁 رفع ملف
+                </button>
+                <button
+                  onClick={() => setUploadMode("url")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${uploadMode === "url" ? "bg-white shadow text-[var(--color-dark)]" : "text-gray-500"}`}
+                >
+                  🔗 رابط
+                </button>
               </div>
+
+              {uploadMode === "file" ? (
+                <div>
+                  <label className="block text-sm font-medium mb-2">ارفعي الصورة</label>
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${
+                      form.imageUrl ? "border-green-300 bg-green-50" : uploading ? "border-blue-300 bg-blue-50" : "border-gray-300 hover:border-[var(--color-gold)] bg-gray-50"
+                    }`}
+                  >
+                    {uploading ? (
+                      <div className="text-blue-500">
+                        <div className="w-8 h-8 border-4 border-blue-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-2"></div>
+                        <span className="text-sm">جاري الرفع...</span>
+                      </div>
+                    ) : form.imageUrl ? (
+                      <div>
+                        <img src={form.imageUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg mb-2" />
+                        <span className="text-sm text-green-600">✅ تم الرفع - اضغطي للتغيير</span>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">
+                        <span className="text-4xl block mb-2">📁</span>
+                        <span className="text-sm">اسحبي الصورة هنا أو اضغطي للرفع</span>
+                        <p className="text-xs mt-1">PNG, JPG, WEBP</p>
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-1">رابط الصورة</label>
+                  <input
+                    value={form.imageUrl}
+                    onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-xl text-left"
+                    placeholder="https://..."
+                  />
+                  {form.imageUrl && (
+                    <img src={form.imageUrl} alt="Preview" className="max-h-32 mt-2 rounded-lg" />
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium mb-1">العنوان</label>
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-2 border rounded-xl" />
