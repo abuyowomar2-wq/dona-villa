@@ -3,7 +3,7 @@ services:
     name: dona-villa
     env: node
     region: frankfurt
-    plan: starter
+    plan: free
     buildCommand: node scripts/render-setup.js && npm run build
     startCommand: npm run start
     envVars:
