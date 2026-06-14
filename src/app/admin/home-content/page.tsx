@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function AdminHomeContentPage() {
@@ -8,6 +8,8 @@ export default function AdminHomeContentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
     const res = await fetch("/api/home-content");
@@ -22,6 +24,18 @@ export default function AdminHomeContentPage() {
     setSaving(false);
     setSuccess("تم الحفظ بنجاح");
     setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    setUploading(false);
+    if (data.url) {
+      setContent({ ...content, heroImage: data.url });
+    }
   };
 
   if (loading) return <LoadingSpinner />;
@@ -40,6 +54,42 @@ export default function AdminHomeContentPage() {
 
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
         <h3 className="font-bold text-lg border-b pb-3">قسم الهيرو</h3>
+
+        {/* Hero Image */}
+        <div>
+          <label className="block text-sm font-medium mb-1">صورة الخلفية</label>
+          {content.heroImage && (
+            <div className="relative mb-3 rounded-xl overflow-hidden">
+              <img src={content.heroImage} alt="Hero" className="w-full h-40 object-cover" />
+              <button
+                onClick={() => setContent({ ...content, heroImage: "" })}
+                className="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <input value={content.heroImage || ""} onChange={(e) => setContent({ ...content, heroImage: e.target.value })} className="flex-1 px-4 py-2 border rounded-xl text-left" placeholder="رابط الصورة" />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-4 py-2 rounded-xl border-2 border-dashed cursor-pointer text-sm flex items-center gap-2 flex-shrink-0 transition ${
+                uploading ? "border-blue-300 bg-blue-50 text-blue-600" : "border-gray-300 hover:border-[var(--color-gold)] text-gray-500"
+              }`}
+            >
+              {uploading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-500 rounded-full animate-spin" />
+                  جاري الرفع...
+                </>
+              ) : (
+                <>📁 رفع</>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} className="hidden" />
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">العنوان (عربي)</label>
           <input value={content.heroTitleAr || ""} onChange={(e) => setContent({ ...content, heroTitleAr: e.target.value })} className="w-full px-4 py-2 border rounded-xl" />
@@ -51,10 +101,6 @@ export default function AdminHomeContentPage() {
         <div>
           <label className="block text-sm font-medium mb-1">النص الفرعي (عربي)</label>
           <textarea rows={3} value={content.heroSubtitleAr || ""} onChange={(e) => setContent({ ...content, heroSubtitleAr: e.target.value })} className="w-full px-4 py-2 border rounded-xl" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">رابط صورة الهيرو</label>
-          <input value={content.heroImage || ""} onChange={(e) => setContent({ ...content, heroImage: e.target.value })} className="w-full px-4 py-2 border rounded-xl text-left" />
         </div>
 
         <h3 className="font-bold text-lg border-b pb-3 pt-4">نبذة عن الصالون</h3>
