@@ -17,6 +17,12 @@ services:
         fromDatabase:
           name: dona-villa-db
           property: connectionString
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dqu2kwlvl
+      - key: CLOUDINARY_API_KEY
+        value: 348386963723891
+      - key: CLOUDINARY_API_SECRET
+        value: BU_RxurpB4nGQ8AFv4WRz3NPEvo
 
 databases:
   - name: dona-villa-db
