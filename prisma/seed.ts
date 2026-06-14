@@ -1,7 +1,7 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaPg } from "@prisma/adapter-pg";
-import "dotenv/config";
+try { require("dotenv/config"); } catch {}
 import bcrypt from "bcryptjs";
 
 const dbUrl = process.env.DATABASE_URL || "";

@@ -7,6 +7,10 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
+// Ensure dependencies are installed
+console.log("📦 Installing dependencies...");
+execSync("npm install --production=false", { stdio: "inherit" });
+
 const schemaPath = path.join(__dirname, "..", "prisma", "schema.prisma");
 const schemaContent = fs.readFileSync(schemaPath, "utf8");
 

@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
 const dbUrl = process.env["DATABASE_URL"] || "file:./dev.db";
